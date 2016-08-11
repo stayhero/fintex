@@ -23,22 +23,25 @@ defmodule FinTex.Command.Sequencer do
 
   def new(client_system_id \\ "0", bank = %{}, credentials \\ nil, options)
   when is_list(options) do
-    {_, _, _} = :random.seed
+    {_, _} = :rand.seed(:exsplus)
 
-    d = cond do 
-      credentials -> Dialog.new(client_system_id, bank, credentials.login, credentials.client_id, credentials.pin)
-      true        -> Dialog.new(client_system_id, bank)
+    d = if credentials do
+      Dialog.new(client_system_id, bank, credentials.login, credentials.client_id, credentials.pin)
+    else
+      Dialog.new(client_system_id, bank)
     end
 
-    ssl_options = Application.get_env(:fintex, :ssl_options, [])
-    |> Keyword.merge(Keyword.get(options, :ssl_options, []))
+    ssl_options = :fintex
+    |> Application.get_env(:ssl_options, [])
+    |> Keyword.merge(options |> Keyword.get(:ssl_options, []))
 
-    ibrowse = Application.get_env(:fintex, :ibrowse, [])
-    |> Keyword.merge(Keyword.get(options, :ibrowse, []))
+    ibrowse = :fintex
+    |> Application.get_env(:ibrowse, [])
+    |> Keyword.merge(options |> Keyword.get(:ibrowse, []))
 
-    timeout = nil
-    || Keyword.get(options, :http_options, []) |> Keyword.get(:timeout)
-    || Application.get_env(:fintex, :http_options, []) |> Keyword.get(:timeout)
+    timeout = options |> Keyword.get(:http_options, []) |> Keyword.get(:timeout)
+    || :fintex |> Application.get_env(:http_options, []) |> Keyword.get(:timeout)
+    || 10_000
 
     options = options
     |> Keyword.merge([ssl_options: ssl_options, ibrowse: ibrowse, timeout: timeout])
@@ -75,7 +78,7 @@ defmodule FinTex.Command.Sequencer do
       {:ok, response_body} ->
         response = HTTPBody.decode_body(response_body)
         response |> inspect(pretty: true, limit: :infinity) |> debug
-        Stream.concat(response[:HIRMG], response[:HIRMS]) |> check_messages_for_errors
+        response[:HIRMG] |> Stream.concat(response[:HIRMS]) |> check_messages_for_errors
         {:ok, response}
       :ok ->
         :ok

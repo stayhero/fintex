@@ -1,47 +1,34 @@
-defmodule FinTex.Model.Payment do
-  @moduledoc """
-  The following fields are public:
-    * `sender_account`    - Bank account of the sender
-    * `receiver_account`  - Bank account of the receiver
-    * `amount`            - Order amount
-    * `currency`          - Three-character currency code (ISO 4217)
-    * `purpose`           - Purpose text
-    * `tan_scheme`        - TAN scheme
-  """
+defprotocol FinTex.Model.Payment do
 
   alias FinTex.Model.Account
   alias FinTex.Model.TANScheme
 
-  @type t :: %__MODULE__{
-    sender_account: Account.t,
-    receiver_account: Account.t,
-    amount: %Decimal{},
-    currency: String.t,
-    purpose: String.t,
-    tan_scheme: TANScheme.t
-  }
+  @doc "Bank account of the sender"
+  @spec sender_account(t) :: Account.t
+  def sender_account(payment)
 
-  defstruct [
-    :sender_account,
-    :receiver_account,
-    :amount,
-    :currency,
-    :purpose,
-    :tan_scheme
-  ]
 
-  use Vex.Struct
+  @doc "Bank account of the receiver"
+  @spec receiver_account(t) :: Account.t
+  def receiver_account(payment)
 
-  validates :sender_account, presence: true
 
-  validates :receiver_account, presence: true
+  @doc "Order amount"
+  @spec amount(t) :: %Decimal{}
+  def amount(payment)
 
-  validates :amount, amount: true
 
-  validates :currency, presence: true, currency: true
+  @doc "Three-character currency code (ISO 4217)"
+  @spec currency(t) :: String.t
+  def currency(payment)
 
-  validates :purpose, presence: true, latin_char_set: true, length: [in: 1..140]
 
-  validates :tan_scheme, presence: true
+  @doc "Purpose text"
+  @spec purpose(t) :: String.t
+  def purpose(payment)
 
+
+  @doc "TAN scheme"
+  @spec tan_scheme(t) :: TANScheme.t
+  def tan_scheme(payment)
 end

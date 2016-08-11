@@ -11,22 +11,25 @@ defmodule FinTex.Command.Synchronization do
   alias FinTex.Segment.HNSHK
   alias FinTex.Service.Accounts
   alias FinTex.Service.SEPAInfo
-
+  alias FinTex.Service.TANMedia
 
   use AbstractCommand
+
+  @services [
+    Accounts,
+    SEPAInfo,
+    TANMedia
+  ]
 
   def synchronize(bank, client_system_id, tan_scheme_sec_func, credentials, options) when is_list(options) do
     seq = Sequencer.new(client_system_id, bank, credentials, options)
 
-    if tan_scheme_sec_func != nil do
-      seq = seq |> Sequencer.reset(tan_scheme_sec_func)
-    end
+    seq = if tan_scheme_sec_func != nil, do: seq |> Sequencer.reset(tan_scheme_sec_func), else: seq
 
-    {seq, accounts} = {seq, %{}}
-    |> Accounts.update_accounts
-    |> SEPAInfo.update_accounts
-
-    {seq, accounts}
+    @services
+    |> Enum.reduce({seq, %{}}, fn(service, acc) ->
+      apply(service, :check_capabilities_and_update_accounts, [acc])
+    end)
   end
 
 

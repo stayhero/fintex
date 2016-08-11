@@ -4,8 +4,6 @@ defmodule FinTex.Service.Accounts do
   alias FinTex.Command.AbstractCommand
   alias FinTex.Command.Sequencer
   alias FinTex.Data.AccountHandler
-  alias FinTex.Model.Account
-  alias FinTex.Model.TANScheme
   alias FinTex.Model.Dialog
   alias FinTex.Segment.HITANS
   alias FinTex.Segment.HKIDN
@@ -14,16 +12,17 @@ defmodule FinTex.Service.Accounts do
   alias FinTex.Segment.HNHBS
   alias FinTex.Segment.HNSHA
   alias FinTex.Segment.HNSHK
-  alias FinTex.Service.ServiceBehaviour
+  alias FinTex.Service.AbstractService
+  alias FinTex.User.FinAccount
+  alias FinTex.User.FinTANScheme
 
   use AbstractCommand
-  import AccountHandler
+  use AbstractService
 
-  @behaviour ServiceBehaviour
   @allowed_methods 3920
 
 
-  def has_capability?(_, _), do: true
+  def has_capability?(_), do: true
 
 
   def update_accounts {seq, _} do
@@ -39,7 +38,7 @@ defmodule FinTex.Service.Accounts do
     {:ok, response} = seq |> Sequencer.call_http(request_segments)
 
     bpd = response[4]
-    |> Enum.group_by(Map.new, fn [[name | _] | _] -> name end)
+    |> Enum.group_by(fn [[name | _] | _] -> name end)
 
 
     pintan = bpd |> Map.get("HKPIN" |> control_structure_to_bpd)
@@ -65,8 +64,8 @@ defmodule FinTex.Service.Accounts do
     supported_tan_schemes = pintan
     |> Map.get("HKTAN")
     |> Stream.flat_map(&HITANS.to_tan_schemes(&1))
-    |> Stream.filter(fn %TANScheme{sec_func: sec_func} -> tan_scheme_sec_funcs |> MapSet.member?(sec_func) end)
-    |> Enum.uniq_by(fn %TANScheme{sec_func: sec_func} -> sec_func end)
+    |> Stream.filter(fn %FinTANScheme{sec_func: sec_func} -> tan_scheme_sec_funcs |> MapSet.member?(sec_func) end)
+    |> Enum.uniq_by(fn %FinTANScheme{sec_func: sec_func} -> sec_func end)
 
     seq = seq
     |> Sequencer.inc
@@ -74,14 +73,14 @@ defmodule FinTex.Service.Accounts do
 
     accounts = seq
     |> Sequencer.dialog
-    |> accounts(response[:HIUPD])
-    |> to_accounts_map
+    |> to_accounts(response[:HIUPD])
+    |> AccountHandler.to_accounts_map
 
     {seq, accounts}
   end
 
 
-  defp accounts(
+  defp to_accounts(
     %Dialog{
       bank: bank,
       supported_tan_schemes: supported_tan_schemes,
@@ -98,10 +97,17 @@ defmodule FinTex.Service.Accounts do
     user_params
 
     |> Stream.map(fn u ->
-      account = %Account{
-        account_number:          u |> Enum.at(1) |> Enum.at(0),
-        subaccount_id:           u |> Enum.at(1) |> Enum.at(1),
-        blz:                     u |> Enum.at(1) |> Enum.at(3),
+
+      account_number = with [account_number |_] <- u |> Enum.at(1), do: account_number
+
+      subaccount_id = with [_, subaccount_id |_] <- u |> Enum.at(1), do: subaccount_id
+
+      blz = with [_, _, _, blz |_] <- u |> Enum.at(1), do: blz
+
+      account = %FinAccount{
+        account_number:          account_number,
+        subaccount_id:           subaccount_id,
+        blz:                     blz,
         currency:                u |> Enum.at(3 + offset),
         owner:                  [u |> Enum.at(4 + offset), u |> Enum.at(5 + offset)]
                                    |> Enum.join(" ")
@@ -124,18 +130,15 @@ defmodule FinTex.Service.Accounts do
                                  |> Enum.sort,
         supported_tan_schemes:  supported_tan_schemes,
         preferred_tan_scheme:   supported_tan_schemes
-                                 |> Stream.map(fn %TANScheme{sec_func: sec_func} -> sec_func end)
+                                 |> Stream.map(fn %FinTANScheme{sec_func: sec_func} -> sec_func end)
                                  |> Enum.at(0)
       }
 
       # add IBAN if available
-      iban = case Enum.at(u, 2) do
-        ""  -> nil
-        els -> els
-      end
+      iban = with "" <- u |> Enum.at(2), do: nil
 
       case bank.version do
-        "300" -> %Account{account | iban: iban}
+        "300" -> %FinAccount{account | iban: iban}
         _ -> account
       end
 

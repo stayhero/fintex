@@ -1,9 +1,9 @@
 defmodule FinTex.Segment.HKKAZ do
   @moduledoc false
 
-  alias FinTex.Model.Account
-  alias FinTex.Model.Dialog
   alias FinTex.Helper.Segment
+  alias FinTex.Model.Dialog
+  alias FinTex.User.FinAccount
 
   defstruct [:account, :from, :to, :start_point, segment: nil]
 
@@ -12,7 +12,7 @@ defmodule FinTex.Segment.HKKAZ do
 
   def new(
     %__MODULE__{
-      account: %Account{
+      account: %FinAccount{
         iban:           iban,
         bic:            bic,
         blz:            blz,
@@ -29,10 +29,11 @@ defmodule FinTex.Segment.HKKAZ do
   ) do
 
     v = max_version(d, __MODULE__)
-    ktv = case v do
-      6 when iban != nil and bic != nil -> [iban, bic]
-      7 when iban != nil and bic != nil -> [iban, bic]
-      _                                 -> [account_number, subaccount_id, country_code, blz]
+
+    ktv = if v >= 7 do
+      [iban, bic]
+    else
+      [account_number, subaccount_id, country_code, blz]
     end
 
     %__MODULE__{
@@ -43,11 +44,11 @@ defmodule FinTex.Segment.HKKAZ do
           "N",
           case from do
             nil -> ""
-            _   -> from |> DateFormat.format!("%Y%m%d", :strftime)
+            _   -> from |> Timex.format!("%Y%m%d", :strftime)
           end,
           case to do
             nil -> ""
-            _   -> to |> DateFormat.format!("%Y%m%d", :strftime)
+            _   -> to |> Timex.format!("%Y%m%d", :strftime)
           end,
           "",
           start_point

@@ -1,8 +1,6 @@
 defmodule FinTex.Connection.HTTPClient do
   @moduledoc false
 
-  alias FinTex.Config.Identifier
-
   use ExActor.Strict
   import Logger
 
@@ -40,7 +38,7 @@ defmodule FinTex.Connection.HTTPClient do
         Keyword.merge(
           [
             verify_fun: {
-              verify_fun, 
+              verify_fun,
               List.keyreplace(initial_user_state, :check_hostname, 0, {:check_hostname, hostname})
             },
             server_name_indication: hostname

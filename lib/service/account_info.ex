@@ -3,31 +3,32 @@ defmodule FinTex.Service.AccountInfo do
 
   alias FinTex.Command.AbstractCommand
   alias FinTex.Command.Sequencer
-  alias FinTex.Model.Account
   alias FinTex.Segment.HKKIF
   alias FinTex.Segment.HNHBK
   alias FinTex.Segment.HNHBS
   alias FinTex.Segment.HNSHA
   alias FinTex.Segment.HNSHK
   alias FinTex.Service.AbstractService
-  alias FinTex.Service.ServiceBehaviour
+  alias FinTex.User.FinAccount
 
   use AbstractCommand
   use AbstractService
 
-  @behaviour ServiceBehaviour
 
-
-  def has_capability?(_, %Account{supported_transactions: supported_transactions}) do
-    supported_transactions |>  Enum.member?("HKKIF")
+  def has_capability? {_, accounts} do
+    accounts
+    |> Map.values
+    |> Enum.all?(fn %FinAccount{supported_transactions: supported_transactions} ->
+      supported_transactions |>  Enum.member?("HKKIF")
+    end)
   end
 
 
-  def update_account(seq, account = %Account{}) do
+  def update_account(seq, account = %FinAccount{}) do
     {seq, account_infos} = seq |> check_account_info(account, [])
 
     account_info = account_infos |> Enum.at(0)
-    account = %Account{account | type: account_info |> Enum.at(2) |> String.to_integer |> to_account_type}
+    account = %FinAccount{account | type: account_info |> Enum.at(2) |> String.to_integer |> to_account_type}
 
     {seq, account}
   end

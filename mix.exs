@@ -4,16 +4,16 @@ defmodule FinTex.Mixfile do
   def project do
     [
       app: :fintex,
-      version: "0.2.0",
+      version: "0.3.0",
       name: "FinTex",
       source_url: "https://github.com/my-flow/fintex",
       homepage_url: "http://hexdocs.pm/fintex",
-      elixir: "~> 1.2.0-rc.0",
-      description: description,
-      package: package,
+      elixir: "~> 1.3",
+      description: description(),
+      package: package(),
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
-      deps: deps,
+      deps: deps(),
       dialyzer: [plt_add_deps: true],
       test_coverage: [tool: ExCoveralls]
     ]
@@ -28,7 +28,8 @@ defmodule FinTex.Mixfile do
         :ibrowse,
         :logger,
         :ssl_verify_hostname,
-        :timex
+        :timex,
+        :xml_builder
       ]
     ]
   end
@@ -36,19 +37,21 @@ defmodule FinTex.Mixfile do
 
   defp deps do
     [
-      {:decimal,               "~> 1.1.0"},
-      {:earmark,               "~> 0.1.19"},
-      {:ex_doc,                "~> 0.11.2", only: :dev},
-      {:exactor,               "~> 2.2.0"},
-      {:excoveralls,           "~> 0.4.3",  only: [:dev, :test]},
-      {:httpotion,             "~> 2.1.0"},
+      {:bankster,              "~> 0.2.2"},
+      {:credo,                 "~> 0.4.7",  only: [:dev, :test]},
+      {:decimal,               "~> 1.1.2"},
+      {:earmark,               "~> 1.0.1",  only: :dev, override: true},
+      {:ex_doc,                "~> 0.13.0", only: :dev},
+      {:exactor,               "~> 2.2.1"},
+      {:excoveralls,           "~> 0.5.5",  only: :test},
+      {:httpotion,             "~> 3.0.0"},
       {:ibrowse,               "~> 4.2.2"},
-      {:inch_ex,               "~> 0.4.0",  only: [:dev, :docs]},
-      {:luhnatex,              "~> 0.5.0"},
-      {:mt940,                 "~> 0.4.0"},
-      {:ssl_verify_hostname,   "<= 1.0.6", manager: :rebar},
-      {:timex,                 "~> 0.19.5"},
-      {:vex,                   "~> 0.5.4"},
+      {:inch_ex,               "~> 0.5.3",  only: [:dev, :docs]},
+      {:luhnatex,              "~> 0.5.1"},
+      {:mt940,                 "~> 1.1.0"},
+      {:ssl_verify_hostname,   "<= 1.0.6"},
+      {:timex,                 "~> 3.0.4"},
+      {:vex,                   "~> 0.5.5"},
       {:xml_builder,           "~> 0.0.8"}
     ]
   end

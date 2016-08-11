@@ -1,7 +1,7 @@
 defmodule FinTex.Segment.HITANS do
   @moduledoc false
 
-  alias FinTex.Model.TANScheme
+  alias FinTex.User.FinTANScheme
 
   defstruct [segment: nil]
 
@@ -24,7 +24,10 @@ defmodule FinTex.Segment.HITANS do
           segment |> Enum.at(2),
           segment |> Enum.at(3),
           (segment |> Enum.at(4) |> Enum.take(offset)) ++
-          [segment |> Enum.at(4) |> Enum.drop(offset) |> Enum.chunk(params_count)]
+          [segment |> Enum.at(4)
+                   |> Enum.drop(offset)
+                   # The last element is optional in some element versions, hence fill up with a nil
+                   |> Enum.chunk(params_count, params_count, [nil])]
         ]
     }
   end
@@ -35,7 +38,7 @@ defmodule FinTex.Segment.HITANS do
     |> Enum.at(4)
     |> Enum.at(4)
     |> Enum.map(fn method_params ->
-        %TANScheme{
+        %FinTANScheme{
           sec_func: method_params |> Enum.at(0),
           format:   method_params |> Enum.at(2) |> to_format,
           name:     method_params |> Enum.at(3),
@@ -51,7 +54,7 @@ defmodule FinTex.Segment.HITANS do
     |> Enum.at(4)
     |> Enum.at(3)
     |> Enum.map(fn method_params ->
-        %TANScheme{
+        %FinTANScheme{
           sec_func: method_params |> Enum.at(0),
           format:   nil |> to_format,
           name:     method_params |> Enum.at(3),
@@ -67,14 +70,15 @@ defmodule FinTex.Segment.HITANS do
     |> Enum.at(4)
     |> Enum.at(3)
     |> Enum.map(fn method_params ->
-        %TANScheme{
+        %FinTANScheme{
           sec_func: method_params |> Enum.at(0),
           format:   method_params |> Enum.at(2) |> to_format,
           name:     method_params |> Enum.at(3),
           label:    method_params |> Enum.at(6),
-          medium_name: case method_params |> Enum.at(16) do
-            "2" -> :required
-            _   -> nil
+          medium_name_required: case method_params |> Enum.at(16) do
+            "0" -> false
+            "1" -> false
+            "2" -> true
           end,
           v:        v
         }
@@ -87,14 +91,15 @@ defmodule FinTex.Segment.HITANS do
     |> Enum.at(4)
     |> Enum.at(3)
     |> Enum.map(fn method_params ->
-        %TANScheme{
+        %FinTANScheme{
           sec_func: method_params |> Enum.at(0),
           format:   method_params |> Enum.at(3) |> to_format,
           name:     method_params |> Enum.at(5),
           label:    method_params |> Enum.at(8),
-          medium_name: case method_params |> Enum.at(20) do
-            "2" -> :required
-            _   -> nil
+          medium_name_required: case method_params |> Enum.at(20) do
+            "0" -> false
+            "1" -> false
+            "2" -> true
           end,
           v:        v
         }
@@ -107,14 +112,15 @@ defmodule FinTex.Segment.HITANS do
     |> Enum.at(4)
     |> Enum.at(3)
     |> Enum.map(fn method_params ->
-        %TANScheme{
+        %FinTANScheme{
           sec_func: method_params |> Enum.at(0),
           format:   method_params |> Enum.at(2) |> to_format,
           name:     method_params |> Enum.at(5),
           label:    method_params |> Enum.at(8),
-          medium_name: case method_params |> Enum.at(19) do
-            "2" -> :required
-            _   -> nil
+          medium_name_required: case method_params |> Enum.at(20) do
+            "0" -> false
+            "1" -> false
+            "2" -> true
           end,
           v:        v
         }

@@ -1,9 +1,9 @@
 defmodule FinTex.Segment.HKKIF do
   @moduledoc false
 
-  alias FinTex.Model.Account
-  alias FinTex.Model.Dialog
   alias FinTex.Helper.Segment
+  alias FinTex.Model.Dialog
+  alias FinTex.User.FinAccount
 
   defstruct [:account, :start_point, segment: nil]
 
@@ -12,7 +12,7 @@ defmodule FinTex.Segment.HKKIF do
 
   def new(
     %__MODULE__{
-      account: %Account{
+      account: %FinAccount{
         iban:           iban,
         bic:            bic,
         blz:            blz,
@@ -27,9 +27,10 @@ defmodule FinTex.Segment.HKKIF do
   ) do
 
     v = max_version(d, __MODULE__)
-    ktv = cond do
-      iban != nil and bic != nil -> [iban, bic]
-      :else                      -> [account_number, subaccount_id, country_code, blz]
+    ktv = if iban != nil and bic != nil do
+      [iban, bic]
+    else
+      [account_number, subaccount_id, country_code, blz]
     end
 
     %__MODULE__{

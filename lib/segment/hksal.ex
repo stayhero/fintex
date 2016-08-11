@@ -1,7 +1,6 @@
 defmodule FinTex.Segment.HKSAL do
   @moduledoc false
 
-  alias FinTex.Model.Account
   alias FinTex.Model.Dialog
   alias FinTex.Helper.Segment
 
@@ -11,7 +10,7 @@ defmodule FinTex.Segment.HKSAL do
 
   def new(
     %__MODULE__{
-      account: %Account{
+      account: %{
         iban:           iban,
         bic:            bic,
         blz:            blz,
@@ -25,10 +24,11 @@ defmodule FinTex.Segment.HKSAL do
   ) do
 
     v = max_version(d, __MODULE__)
-    ktv = case v do
-      6 when iban != nil and bic != nil -> [iban, bic]
-      7 when iban != nil and bic != nil -> [iban, bic]
-      _                                 -> [account_number, subaccount_id, country_code, blz]
+
+    ktv = if v >= 7 do
+      [iban, bic]
+    else
+      [account_number, subaccount_id, country_code, blz]
     end
 
     %__MODULE__{
